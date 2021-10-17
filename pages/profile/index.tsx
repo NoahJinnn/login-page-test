@@ -1,19 +1,22 @@
+import { useActor } from '@xstate/react';
 import { useRouter } from 'next/dist/client/router';
 import Head from 'next/head';
-import React, { useEffect, useState } from 'react';
-import { Layout } from '../../layouts/Layout';
+import React, { useContext, useEffect, useState } from 'react';
 import supabase from '../../libs/supabase';
+import { VERIFY_MS } from '../../machines/authMachine';
+import { GlobalStateContext } from '../_app';
 
 const Profile = () => {
+  const globalServices = useContext(GlobalStateContext);
+  const [state] = useActor(globalServices.authService);
   const [profile, setProfile] = useState(null);
   const router = useRouter();
 
   async function fetchProfile() {
-    const profileData = await supabase.auth.user();
-    if (!profileData) {
+    if (state.value !== VERIFY_MS || !Boolean(state.context?.userData)) {
       router.push('/login');
     } else {
-      setProfile(profileData);
+      setProfile(state.context?.userData);
     }
   }
   async function signOut() {
@@ -26,7 +29,7 @@ const Profile = () => {
   }, []);
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Profile</title>
       </Head>
@@ -46,7 +49,7 @@ const Profile = () => {
           <div>User data is loading...</div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

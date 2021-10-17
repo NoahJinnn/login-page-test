@@ -1,23 +1,28 @@
-import { useRouter } from 'next/dist/client/router';
+import { useActor, useMachine } from '@xstate/react';
 import Head from 'next/head';
 import React, { useState } from 'react';
-import { Layout } from '../../layouts/Layout';
 import supabase from '../../libs/supabase';
+import {
+  authMachine,
+  AUTH_AUTHENTICATED_MS,
+  AUTH_LOADING_MS,
+  LOGIN_EVENT,
+  LOGIN_EVENT_ERROR,
+  LOGIN_EVENT_SUCCESS,
+} from '../../machines/authMachine';
+import { GlobalStateContext } from '../_app';
 
 const Login = () => {
   const [email, setEmail] = useState<string>();
-  const [submitted, setSubmitted] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const router = useRouter();
+  const [state, send] = useMachine(authMachine);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSending(true);
+    send(LOGIN_EVENT);
     const { error } = await supabase.auth.signIn({ email });
     if (!error) {
-      setIsSending(false);
-      setSubmitted(true);
+      send(LOGIN_EVENT_SUCCESS);
     } else {
-      console.error(error);
+      send(LOGIN_EVENT_ERROR);
     }
   };
 
@@ -25,13 +30,13 @@ const Login = () => {
     setEmail(e.target.value);
   };
 
-  if (isSending) {
+  if (state.value === AUTH_LOADING_MS) {
     return (
       <div className="border rounded-lg p-12 w-4/12 mx-auto my-48 flex justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
-  } else if (submitted) {
+  } else if (state.value === AUTH_AUTHENTICATED_MS) {
     return (
       <div className="border rounded-lg p-12 w-4/12 mx-auto my-48 flex justify-center">
         <h1>Please check your email to sign in</h1>
@@ -40,7 +45,7 @@ const Login = () => {
   }
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Login</title>
       </Head>
@@ -67,7 +72,7 @@ const Login = () => {
           </button>
         </form>
       </div>
-    </Layout>
+    </>
   );
 };
 
