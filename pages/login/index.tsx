@@ -1,4 +1,4 @@
-import { useActor, useMachine } from '@xstate/react';
+import { useMachine } from '@xstate/react';
 import Head from 'next/head';
 import React, { useState } from 'react';
 import supabase from '../../libs/supabase';
@@ -10,7 +10,6 @@ import {
   LOGIN_EVENT_ERROR,
   LOGIN_EVENT_SUCCESS,
 } from '../../machines/authMachine';
-import { GlobalStateContext } from '../_app';
 
 const Login = () => {
   const [email, setEmail] = useState<string>();
@@ -22,7 +21,7 @@ const Login = () => {
     if (!error) {
       send(LOGIN_EVENT_SUCCESS);
     } else {
-      send(LOGIN_EVENT_ERROR);
+      send({ type: LOGIN_EVENT_ERROR, errorMessage: error.message });
     }
   };
 
